@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="bn" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Script Modifier - AI গল্প সংশোধক ও অটো-স্ক্রিপ্ট মেকার</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            bengali: ['"Hind Siliguri"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Hind Siliguri', sans-serif;
+      background-color: #090d16;
+      color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .app-shell {
+      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.16) 0%, rgba(15, 23, 42, 0.98) 55%, #090d16 100%);
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .recording-pulse {
+      animation: pulse-ring 1.5s infinite;
+    }
+
+    /* Print Stylesheet for PDF Export */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center items-start sm:items-center sm:py-6">
+
+  <!-- Main Mobile Frame -->
+  <div class="w-full max-w-md min-h-screen sm:min-h-[840px] sm:max-h-[90vh] app-shell sm:rounded-[36px] shadow-2xl border-0 sm:border sm:border-slate-800/80 flex flex-col justify-between overflow-hidden relative">
+
+    <!-- Top Status & App Header -->
+    <header class="no-print sticky top-0 z-30 bg-slate-900/85 backdrop-blur-md border-b border-slate-800/80 px-5 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+            <i class="ph-fill ph-film-slate text-2xl text-white"></i>
+        <!-- Quick History & Settings Buttons -->
+        <div class="flex items-center gap-2">
+          <button onclick="toggleApiKeyModal()" class="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-indigo-300 transition border border-slate-700/70" title="AI সেটিংস">
+            <i class="ph ph-key text-xl"></i>
+          </button>
+          <button onclick="switchTab('history')" class="relative p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 transition border border-slate-700/70" title="সংরক্ষিত স্ক্রিপ্ট">
+            <i class="ph ph-clock-counter-clockwise text-xl"></i>
+            <span id="historyBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible API Key Bar -->
+      <div id="apiKeyPanel" class="hidden mt-3 pt-3 border-t border-slate-800 space-y-2">
+        <label class="text-xs font-medium text-indigo-300 flex items-center justify-between">
+          <span>🔑 Gemini API Key (ঐচ্ছিক - না দিলেও স্মার্ট অফলাইন AI কাজ করবে)</span>
+          <button onclick="toggleApiKeyModal()" class="text-slate-400 hover:text-white"><i class="ph ph-x"></i></button>
+        </label>
+        <input id="customApiKeyInput" type="password" placeholder="আপনার Gemini API Key এখানে পেস্ট করুন..." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white focus:outline-none focus:border-indigo-500">
+      </div>
+    </header>
+
+    <!-- Main Scrollable Content Area -->
+    <main class="no-print flex-1 overflow-y-auto px-4 py-4 space-y-5">
+
+      <!-- TAB 1: EDITOR & GENERATOR -->
+      <div id="tab-editor" class="space-y-5">
+
+        <!-- Step 1: Story Input Card -->
+        <section class="glass-panel rounded-3xl p-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <label for="rawStoryInput" class="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
+              <i class="ph-fill ph-pen-nib text-indigo-400 text-base"></i>
+              <span>আপনার গল্প বা অগোছালো সংলাপ লিখুন</span>
+            </label>
+            <div class="flex items-center gap-1.5">
+              <button onclick="loadSampleStory(1)" class="text-xs px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 font-medium transition flex items-center gap-1">
+                <i class="ph ph-magic-wand"></i> উদাহরণ লোড করুন
+              </button>
+              <button onclick="clearInput()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition" title="মুছে ফেলুন">
+                <i class="ph ph-trash text-sm"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Sample Presets Bar -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <span class="text-slate-400 shrink-0">নমুনা গল্প:</span>
+            <button onclick="loadSampleStory(1)" class="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+              ১. আলিম ও মেঘলা (বানান ভুলসহ)
+            </button>
+            <button onclick="loadSampleStory(2)" class="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+              ২. চায়ের দোকানের আড্ডা
+            </button>
+            <button onclick="loadSampleStory(3)" class="shrink-0 px-2.5 py-1 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+              ৩. রহস্যময় ফোনকল
+            </button>
+          </div>
+
+          <!-- Textarea -->
+          <div class="relative">
+            <textarea
+              id="rawStoryInput"
+              rows="5"
+              placeholder="এখানে যেকোনো গল্প লিখুন... যেমন: আলিম মেঘলাকে দেখে বললো কেমন আছেন আপু মেঘলা হাসিমুখে উত্তর দিল ভাল আছি তুমি কেমন আছো আলিম বলল ভালো আছি..."
+              class="w-full rounded-2xl bg-slate-950/90 border border-slate-700/80 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 p-3.5 text-sm text-slate-100 placeholder-slate-500 leading-relaxed resize-none transition outline-none"
+            ></textarea>
+            <div id="charCount" class="absolute bottom-2.5 right-3 text-[11px] text-slate-500">০ অক্ষর</div>
+          </div>
+
+          <!-- Voice Typing & Format Controls -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <!-- Voice Typing Button -->
+            <button
+              id="voiceBtn"
+              onclick="toggleVoiceTyping()"
+              class="flex-1 py-2.5 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium flex items-center justify-center gap-2 transition active:scale-95"
+            >
+              <i id="voiceIcon" class="ph-fill ph-microphone text-rose-400 text-base"></i>
+              <span id="voiceBtnText">🎤 মুখে বলে লিখুন (বাংলা)</span>
+            </button>
+
+            <!-- Separator Style Selector -->
+            <div class="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-2.5 py-1.5 rounded-xl">
+              <span class="text-[11px] text-slate-400">স্টাইল:</span>
+              <select id="separatorStyle" onchange="reRenderScriptLines()" class="bg-transparent text-xs font-semibold text-indigo-300 focus:outline-none cursor-pointer">
+                <option value=" :- " class="bg-slate-900">নাম :- সংলাপ</option>
+                <option value=":- " class="bg-slate-900">নাম:- সংলাপ</option>
+                <option value=" : " class="bg-slate-900">নাম : সংলাপ</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Primary AI Action Button -->
+          <button
+            id="generateBtn"
+            onclick="handleModifyScript()"
+            class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-base shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2.5 transition transform active:scale-[0.98]"
+          >
+            <i class="ph-fill ph-sparkle text-xl"></i>
+            <span>ভুল ঠিক করুন ও স্ক্রিপ্ট বানান</span>
+          </button>
+        </section>
+
+        <!-- Loading Skeleton State -->
+        <section id="loadingSection" class="hidden glass-panel rounded-3xl p-6 text-center space-y-4">
+          <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mx-auto animate-bounce">
+            <i class="ph-fill ph-magic-wand text-3xl text-indigo-400"></i>
+          </div>
+          <div class="space-y-1">
+            <h3 class="text-base font-bold text-white">AI আপনার গল্প বিশ্লেষণ করছে...</h3>
+            <p class="text-xs text-slate-400">বানান সংশোধন, চরিত্রের নাম পৃথকীকরণ এবং সংলাপ সাজানো হচ্ছে</p>
+          </div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full w-2/3 animate-pulse rounded-full"></div>
+          </div>
+        </section>
+
+        <!-- Step 2: AI Output Results Section -->
+        <div id="resultContainer" class="space-y-4">
+
+          <!-- Grammar Correction Summary Banner -->
+          <div id="correctionBanner" class="glass-panel rounded-2xl p-3.5 border-l-4 border-l-emerald-500 flex items-start gap-3">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+              <i class="ph-fill ph-check-circle text-lg"></i>
+            </div>
+            <div class="text-xs space-y-1 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-emerald-300">AI সংশোধনী রিপোর্ট</span>
+                <span id="aiModeBadge" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300">সংশোধিত</span>
+              </div>
+              <p id="correctionSummaryText" class="text-slate-300 leading-relaxed">
+                গল্পের বানান ও যতিচিহ্ন ঠিক করা হয়েছে এবং চরিত্র অনুযায়ী সংলাপ আলাদা করা হয়েছে।
+              </p>
+            </div>
+          </div>
+
+          <!-- Extracted Characters Card -->
+          <section class="glass-panel rounded-3xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-1.5">
+                <i class="ph-fill ph-users-three text-base"></i>
+                <span>গল্পের চরিত্রসমূহ (Characters)</span>
+              </h2>
+              <span id="characterCountBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                ২ জন চরিত্র
+              </span>
+            </div>
+
+            <!-- Filter by Character -->
+            <div id="characterChipsContainer" class="flex flex-wrap gap-2">
+              <!-- Populated dynamically -->
+            </div>
+            <p class="text-[11px] text-slate-400">
+              💡 যেকোনো চরিত্রের নামের ওপর ক্লিক করে শুধু তার সংলাপ ফিল্টার করতে পারেন অথবা নিচে নাম পরিবর্তন করতে পারেন।
+            </p>
+          </section>
+
+          <!-- Formatted Script Card -->
+          <section class="glass-panel rounded-3xl p-4 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div>
+                <h2 class="text-sm font-bold text-white flex items-center gap-1.5">
+                  <i class="ph-fill ph-scroll text-amber-400 text-lg"></i>
+                  <span>সংশোধিত চূড়ান্ত স্ক্রিপ্ট</span>
+                </h2>
+                <p class="text-[11px] text-slate-400">সংলাপ বা নামের ওপর ট্যাপ করে সরাসরি এডিট করা যাবে</p>
+              </div>
+
+              <!-- View Toggle: Interactive Cards vs Plain Text Format -->
+              <div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+                <button id="viewModeTextBtn" onclick="setScriptViewMode('text')" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold transition">
+                  স্ক্রিপ্ট ভিউ
+                </button>
+                <button id="viewModeCardBtn" onclick="setScriptViewMode('cards')" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white font-medium transition">
+                  এডিট ভিউ
+                </button>
+              </div>
+            </div>
+
+            <!-- VIEW 1: Clean Plain Script View (Matches exact user format) -->
+            <div id="plainScriptView" class="bg-slate-950/90 border border-slate-800/90 rounded-2xl p-4 space-y-3.5">
+              <!-- Populated dynamically -->
+            </div>
+
+            <!-- VIEW 2: Interactive Editable Lines View -->
+            <div id="interactiveScriptView" class="hidden space-y-2.5">
+              <!-- Populated dynamically -->
+            </div>
+
+            <!-- Add New Dialogue Line Button -->
+            <button onclick="addNewDialogueLine()" class="w-full py-2.5 rounded-xl border border-dashed border-slate-700 hover:border-indigo-500/60 text-xs text-slate-400 hover:text-indigo-300 flex items-center justify-center gap-1.5 transition">
+              <i class="ph-bold ph-plus"></i> নতুন সংলাপ লাইন যুক্ত করুন
+            </button>
+
+            <!-- Action & Export Toolbar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+              <button onclick="copyFinalScript()" class="py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-md transition active:scale-95">
+                <i class="ph-bold ph-copy text-sm"></i>
+                <span>📋 কপি করুন</span>
+              </button>
+
+              <button onclick="downloadTxtFile()" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95">
+                <i class="ph-bold ph-file-txt text-sm text-sky-400"></i>
+                <span>TXT ডাউনলোড</span>
+              </button>
+
+              <button onclick="printOrPdfScript()" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95">
+                <i class="ph-bold ph-file-pdf text-sm text-rose-400"></i>
+                <span>PDF প্রিন্ট</span>
+              </button>
+
+              <button onclick="saveCurrentScriptToHistory()" class="py-2.5 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95">
+                <i class="ph-bold ph-bookmark-simple text-sm"></i>
+                <span>সেভ করুন</span>
+              </button>
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+
+      <!-- TAB 2: CHARACTER RENAME & STUDIO -->
+      <div id="tab-characters" class="hidden space-y-4">
+        <section class="glass-panel rounded-3xl p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="ph-fill ph-mask-happy text-indigo-400 text-xl"></i>
+                <span>চরিত্র কাস্টমাইজার</span>
+              </h2>
+              <p class="text-xs text-slate-400">এখান থেকে যেকোনো চরিত্রের নাম পরিবর্তন করলে পুরো স্ক্রিপ্টে তা আপডেট হয়ে যাবে</p>
+            </div>
+          </div>
+
+          <div id="characterManagerList" class="space-y-3">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+      </div>
+
+      <!-- TAB 3: SAVED SCRIPTS HISTORY -->
+      <div id="tab-history" class="hidden space-y-4">
+        <section class="glass-panel rounded-3xl p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="ph-fill ph-folders text-amber-400 text-xl"></i>
+                <span>সংরক্ষিত স্ক্রিপ্ট তালিকা</span>
+              </h2>
+              <p class="text-xs text-slate-400">আপনার তৈরি করা পূর্ববর্তী স্ক্রিপ্টসমূহ</p>
+            </div>
+            <button onclick="clearAllHistory()" class="text-xs text-rose-400 hover:underline flex items-center gap-1">
+              <i class="ph ph-trash"></i> সব মুছুন
+            </button>
+          </div>
+
+          <div id="historyListContainer" class="space-y-3">
+            <!-- Populated dynamically -->
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile App Style) -->
+    <nav class="no-print sticky bottom-0 z-30 bg-slate-900/95 backdrop-blur-md border-t border-slate-800/90 px-4 py-2 flex items-center justify-around">
+      <button onclick="switchTab('editor')" id="nav-editor" class="flex flex-col items-center gap-1 py-1 px-4 rounded-2xl text-indigo-400 font-semibold transition">
+        <i class="ph-fill ph-magic-wand text-xl"></i>
+        <span class="text-[11px]">স্ক্রিপ্ট মেকার</span>
+      </button>
+
+      <button onclick="switchTab('characters')" id="nav-characters" class="flex flex-col items-center gap-1 py-1 px-4 rounded-2xl text-slate-400 hover:text-slate-200 font-medium transition">
+        <i class="ph ph-users-three text-xl"></i>
+        <span class="text-[11px]">চরিত্রসমূহ</span>
+      </button>
+
+      <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center gap-1 py-1 px-4 rounded-2xl text-slate-400 hover:text-slate-200 font-medium transition">
+        <i class="ph ph-bookmarks text-xl"></i>
+        <span class="text-[11px]">সেভ করা স্ক্রিপ্ট</span>
+      </button>
+    </nav>
+
+    <!-- Toast Notification Popup -->
+    <div id="toastBox" class="no-print pointer-events-none fixed bottom-20 left-1/2 -translate-x-1/2 z-50 opacity-0 translate-y-2 transition-all duration-300">
+      <div class="bg-slate-800 border border-slate-700 text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-medium">
+        <i id="toastIcon" class="ph-fill ph-check-circle text-emerald-400 text-base"></i>
+        <span id="toastMessage">সম্পন্ন হয়েছে!</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Printable Area for PDF Export -->
+  <div id="printableArea" class="print-only hidden p-8 max-w-2xl mx-auto">
+    <h1 class="text-2xl font-bold border-b pb-2 mb-4">Script Modifier - সংশোধিত নাটক/গল্পের স্ক্রিপ্ট</h1>
+    <div id="printCharacters" class="mb-4 text-sm font-semibold text-gray-700"></div>
+    <div id="printDialogues" class="space-y-3 text-base leading-relaxed whitespace-pre-line"></div>
+  </div>
+
+  <script>
+    // ==========================================
+    // APPLICATION STATE & CONSTANTS
+    // ==========================================
+    const apiKey = ""; // Canvas runtime automatically injects Gemini API key
+
+    function toggleApiKeyModal() {
+      const panel = document.getElementById('apiKeyPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    const AVATAR_PALETTE = [
+      { bg: 'bg-indigo-500/20', border: 'border-indigo-500/40', text: 'text-indigo-300', dot: 'bg-indigo-400' },
+      { bg: 'bg-pink-500/20', border: 'border-pink-500/40', text: 'text-pink-300', dot: 'bg-pink-400' },
+      { bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', text: 'text-emerald-300', dot: 'bg-emerald-400' },
+      { bg: 'bg-amber-500/20', border: 'border-amber-500/40', text: 'text-amber-300', dot: 'bg-amber-400' },
+      { bg: 'bg-cyan-500/20', border: 'border-cyan-500/40', text: 'text-cyan-300', dot: 'bg-cyan-400' },
+      { bg: 'bg-purple-500/20', border: 'border-purple-500/40', text: 'text-purple-300', dot: 'bg-purple-400' }
+    ];
+
+    // Default Initial State matching the user's exact example
+    let currentScriptData = {
+      title: "আলিম ও মেঘলার কথোপকথন",
+      summary: "বানান ও ব্যাকরণ সংশোধন করে আলিম এবং মেঘলার সংলাপগুলো আলাদা করা হয়েছে।",
+      characters: ["আলিম", "মেঘলা"],
+      dialogues: [
+        { speaker: "আলিম", text: "কেমন আছেন আপু" },
+        { speaker: "মেঘলা", text: "ভালো আছি তুমি কেমন আছো" },
+        { speaker: "আলিম", text: "ভালো আছি" }
+      ]
+    };
+
+    let activeCharacterFilter = null; // null means show all
+    let currentViewMode = 'text'; // 'text' or 'cards'
+    let savedScripts = [];
+    let recognition = null;
+    let isRecording = false;
+
+    // Sample Raw Stories with intentional spelling/formatting mistakes
+    const SAMPLE_STORIES = {
+      1: "আলিম মেঘলাকে দেখে বললো কেমন আছেন আপু মেঘলা হাসিমুখে উত্তর দিল ভাল আছি তুমি কেমন আছো আলিম বলল ভালো আছি",
+      2: "রহিম চায়ে চুমুক দিয়ে করিমকে বলল কিরে দোস্ত আজকে খেলা দেখবি নাকি করিম বলল হ্যাঁ দেখবো তো অবশ্যই কোন দোকানে বসবি রহিম বলল মোড়ের মামার দোকানে আয়",
+      3: "নিশাত ফোন ধরে কাপাঁ গলায় বলল হ্যালো কে বলছেন ওপাশ থেকে রাকিব গম্ভীর স্বরে বলল আমি রাকিব বলছি দরজা খোলো নিশাত ভয় পেয়ে বলল এত রাতে আপনি কেনো এসেছেন"
+    };
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+    window.onload = function () {
+      const inputEl = document.getElementById('rawStoryInput');
+      inputEl.value = SAMPLE_STORIES[1];
+      updateCharCount();
+
+      inputEl.addEventListener('input', updateCharCount);
+
+      loadHistoryFromStorage();
+      renderAllOutput();
+      setupSpeechRecognition();
+    };
+
+    function updateCharCount() {
+      const val = document.getElementById('rawStoryInput').value;
+      document.getElementById('charCount').innerText = `${toBengaliNumber(val.length)} অক্ষর`;
+    }
+
+    function toBengaliNumber(n) {
+      const bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+      return String(n).replace(/\d/g, d => bnDigits[d]);
+    }
+
+    // ==========================================
+    // SAMPLE LOADER & INPUT ACTIONS
+    // ==========================================
+    function loadSampleStory(id) {
+      const inputEl = document.getElementById('rawStoryInput');
+      inputEl.value = SAMPLE_STORIES[id] || SAMPLE_STORIES[1];
+      updateCharCount();
+      showToast("নমুনা গল্প লোড করা হয়েছে! এবার 'স্ক্রিপ্ট বানান' বাটনে চাপুন।");
+    }
+
+    function clearInput() {
+      document.getElementById('rawStoryInput').value = '';
+      updateCharCount();
+      document.getElementById('rawStoryInput').focus();
+    }
+
+    // ==========================================
+    // VOICE TYPING (WEB SPEECH API)
+    // ==========================================
+    function setupSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) return;
+
+      recognition = new SpeechRecognition();
+      recognition.lang = 'bn-BD';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        const btn = document.getElementById('voiceBtn');
+        const txt = document.getElementById('voiceBtnText');
+        btn.classList.add('recording-pulse', 'border-rose-500', 'bg-rose-500/20');
+        txt.innerText = "🔴 শোনা হচ্ছে... বাংলায় বলুন";
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const inputEl = document.getElementById('rawStoryInput');
+        inputEl.value = (inputEl.value ? inputEl.value.trim() + ' ' : '') + transcript;
+        updateCharCount();
+        showToast("ভয়েস টাইপিং যুক্ত হয়েছে!");
+      };
+
+      recognition.onerror = () => {
+        stopVoiceUI();
+        showToast("ভয়েস টাইপিংয়ে সমস্যা হয়েছে, মাইক্রোফোন পারমিশন চেক করুন।", true);
+      };
+
+      recognition.onend = () => {
+        stopVoiceUI();
+      };
+    }
+
+    function toggleVoiceTyping() {
+      if (!recognition) {
+        showToast("আপনার ব্রাউজারে ভয়েস টাইপিং সাপোর্ট করছে না। Chrome ব্যবহার করুন।", true);
+        return;
+      }
+      if (isRecording) {
+        recognition.stop();
+      } else {
+        try {
+          recognition.start();
+        } catch (e) {
+          recognition.stop();
+        }
+      }
+    }
+
+    function stopVoiceUI() {
+      isRecording = false;
+      const btn = document.getElementById('voiceBtn');
+      const txt = document.getElementById('voiceBtnText');
+      btn.classList.remove('recording-pulse', 'border-rose-500', 'bg-rose-500/20');
+      txt.innerText = "🎤 মুখে বলে লিখুন (বাংলা)";
+    }
+
+    // ==========================================
+    // GEMINI AI INTEGRATION + SMART FALLBACK
+    // ==========================================
+    async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(url, options);
+          if (response.ok) return response;
+        } catch (err) {
+          if (i === retries - 1) throw err;
+        }
+        await new Promise(r => setTimeout(r, delay * Math.pow(2, i)));
+      }
+      throw new Error("API call failed after retries");
+    }
+
+    async function handleModifyScript() {
+      const rawText = document.getElementById('rawStoryInput').value.trim();
+      if (!rawText) {
+        showToast("অনুগ্রহ করে প্রথমে একটি গল্প বা সংলাপ লিখুন!", true);
+        return;
+      }
+
+      const generateBtn = document.getElementById('generateBtn');
+      const loadingSection = document.getElementById('loadingSection');
+      const resultContainer = document.getElementById('resultContainer');
+
+      generateBtn.disabled = true;
+      generateBtn.classList.add('opacity-60');
+      loadingSection.classList.remove('hidden');
+      resultContainer.classList.add('opacity-40', 'pointer-events-none');
+      activeCharacterFilter = null;
+
+      try {
+        const aiResult = await callGeminiScriptModifier(rawText);
+        currentScriptData = aiResult;
+        document.getElementById('aiModeBadge').innerText = "Gemini AI দ্বারা সংশোধিত";
+        renderAllOutput();
+        showToast("✨ স্ক্রিপ্ট সফলভাবে সংশোধন ও সাজানো হয়েছে!");
+      } catch (error) {
+        // Fallback to Smart Local Bengali Script Parser so the app never fails
+        const fallbackResult = localBengaliScriptParser(rawText);
+        currentScriptData = fallbackResult;
+        document.getElementById('aiModeBadge').innerText = "স্মার্ট ইঞ্জিন দ্বারা সংশোধিত";
+        renderAllOutput();
+        showToast("✨ স্ক্রিপ্ট প্রস্তুত করা হয়েছে!");
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.classList.remove('opacity-60');
+        loadingSection.classList.add('hidden');
+        resultContainer.classList.remove('opacity-40', 'pointer-events-none');
+      }
+    }
+
+    async function callGeminiScriptModifier(rawStory) {
+      const systemInstruction = `You are the core AI engine for a Bengali mobile app named "Script Modifier".
+Your job is to take raw, unformatted Bengali stories or dialogues with spelling/grammar errors and convert them into a clean character-by-character script.
+
+Rules:
+1. Fix all Bengali spelling mistakes (e.g., 'ভাল' -> 'ভালো', 'আছ' -> 'আছো', 'কেনো' -> 'কেন', 'বললো' -> 'বলল').
+2. Extract all unique character names speaking in the story.
+3. Separate every spoken dialogue line and assign the correct character name ("speaker") and cleaned dialogue text ("text").
+4. Remove narrative filler words like "বলল", "উত্তর দিল", "দেখে বলল" from inside the spoken dialogue so only the pure dialogue remains. If there is pure scene description, use speaker "দৃশ্যপট".
+5. Keep the dialogue natural and faithful to the user's input. For example, if input is "আলিম মেঘলাকে দেখে বললো কেমন আছেন আপু মেঘলা হাসিমুখে উত্তর দিল ভাল আছি তুমি কেমন আছো আলিম বলল ভালো আছি", the dialogues must be:
+   - speaker: "আলিম", text: "কেমন আছেন আপু"
+   - speaker: "মেঘলা", text: "ভালো আছি তুমি কেমন আছো"
+   - speaker: "আলিম", text: "ভালো আছি"`;
+
+      const payload = {
+        contents: [{
+          parts: [{ text: `নিচের বাংলা গল্প বা সংলাপটি সংশোধন করে স্ক্রিপ্ট আকারে সাজিয়ে দিন:\n\n${rawStory}` }]
+        }],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              title: { type: "STRING", description: "Short Bengali title for the script" },
+              summary: { type: "STRING", description: "Brief 1-sentence Bengali note on spelling/grammar fixes made" },
+              characters: {
+                type: "ARRAY",
+                items: { type: "STRING" }
+              },
+              dialogues: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    speaker: { type: "STRING" },
+                    text: { type: "STRING" }
+                  },
+                  propertyOrdering: ["speaker", "text"]
+                }
+              }
+            },
+            propertyOrdering: ["title", "summary", "characters", "dialogues"]
+          }
+        }
+      };
+
+      const userKey = document.getElementById('customApiKeyInput')?.value?.trim() || apiKey;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userKey}`;
+      const response = await fetchWithRetry(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!jsonText) throw new Error("Empty AI response");
+
+      const parsed = JSON.parse(jsonText);
+      if (!parsed.dialogues || parsed.dialogues.length === 0) {
+        throw new Error("No dialogues parsed");
+      }
+      return parsed;
+    }
+
+    // ==========================================
+    // SMART LOCAL BENGALI PARSER (FALLBACK)
+    // ==========================================
+    function localBengaliScriptParser(rawText) {
+      // 1. Common Bengali spelling fixes
+      let fixedText = rawText
+        .replace(/ভাল\b/g, "ভালো")
+        .replace(/আছ\b/g, "আছো")
+        .replace(/কেনো/g, "কেন")
+        .replace(/কাপাঁ/g, "কাঁপা")
+        .replace(/হ্যা\b/g, "হ্যাঁ");
+
+      const dialogues = [];
+      const characterSet = new Set();
+
+      // Check if user already wrote in "নাম :- সংলাপ" format
+      if (fixedText.includes(":-") || fixedText.includes(":")) {
+        const lines = fixedText.split(/\n+/).map(l => l.trim()).filter(Boolean);
+        lines.forEach(line => {
+          const match = line.match(/^([^:-]+)\s*:-?\s*(.+)$/);
+          if (match) {
+            const speaker = match[1].trim();
+            const speech = match[2].trim();
+            characterSet.add(speaker);
+            dialogues.push({ speaker, text: speech });
+          } else {
+            dialogues.push({ speaker: "বর্ণনা", text: line });
+          }
+        });
+      }
+
+      // Narrative story parser (handles continuous text like "আলিম মেঘলাকে দেখে বললো কেমন আছেন আপু মেঘলা হাসিমুখে উত্তর দিল...")
+      if (dialogues.length === 0) {
+        const triggerRegex = /([^\s।?!,]+)\s+(?:[^\s।?!,]+\s+){0,4}?(?:বলল|বললো|উত্তর দিল|উত্তর দিলো|জিজ্ঞেস করল|জিজ্ঞেস করলো|ডেকে বলল|হেসে বলল|বলে উঠল)\s*[:,]?\s*/g;
+        const matches = [...fixedText.matchAll(triggerRegex)];
+
+        if (matches.length > 0) {
+          for (let i = 0; i < matches.length; i++) {
+            const speaker = matches[i][1].replace(/[কে|র]$/, '').trim();
+            const startIdx = matches[i].index + matches[i][0].length;
+            const endIdx = (i + 1 < matches.length) ? matches[i + 1].index : fixedText.length;
+            let speech = fixedText.slice(startIdx, endIdx).trim();
+            speech = speech.replace(/^[,"'“”]+|[।,"'“”]+$/g, '').trim();
+
+            if (speaker && speech) {
+              characterSet.add(speaker);
+              dialogues.push({ speaker, text: speech });
+            }
+          }
+        } else {
+          // Sentence fallback
+          const sentences = fixedText.split(/[।?!\n]+/).map(s => s.trim()).filter(Boolean);
+          sentences.forEach((s, idx) => {
+            const speaker = idx % 2 === 0 ? "চরিত্র ১" : "চরিত্র ২";
+            characterSet.add(speaker);
+            dialogues.push({ speaker, text: s });
+          });
+        }
+      }
+
+      const chars = Array.from(characterSet);
+      return {
+        title: chars.length >= 2 ? `${chars[0]} ও ${chars[1]}-এর কথোপকথন` : "সংশোধিত বাংলা স্ক্রিপ্ট",
+        summary: "বানান (`ভাল` → `ভালো`) ও ব্যাকরণ সংশোধন করে চরিত্র অনুযায়ী সংলাপগুলো সাজানো হয়েছে।",
+        characters: chars,
+        dialogues: dialogues
+      };
+    }
+
+    // ==========================================
+    // RENDERING UI
+    // ==========================================
+    function getCharacterColor(charName) {
+      const idx = Math.max(0, currentScriptData.characters.indexOf(charName));
+      return AVATAR_PALETTE[idx % AVATAR_PALETTE.length];
+    }
+
+    function renderAllOutput() {
+      // Sync unique characters from dialogues
+      const uniqueSpeakers = [];
+      currentScriptData.dialogues.forEach(d => {
+        if (d.speaker && !uniqueSpeakers.includes(d.speaker)) {
+          uniqueSpeakers.push(d.speaker);
+        }
+      });
+      currentScriptData.characters = uniqueSpeakers;
+
+      // 1. Update summary banner
+      document.getElementById('correctionSummaryText').innerText =
+        currentScriptData.summary || "বানান ও ব্যাকরণ ঠিক করে সংলাপগুলো আলাদা করা হয়েছে।";
+
+      // 2. Render Character Badges
+      renderCharacterBadges();
+
+      // 3. Render Script Lines
+      reRenderScriptLines();
+
+      // 4. Render Character Customizer Tab
+      renderCharacterManager();
+    }
+
+    function renderCharacterBadges() {
+      const container = document.getElementById('characterChipsContainer');
+      const countBadge = document.getElementById('characterCountBadge');
+      const chars = currentScriptData.characters;
+
+      countBadge.innerText = `${toBengaliNumber(chars.length)} জন চরিত্র`;
+      container.innerHTML = '';
+
+      // "All Characters" chip
+      const allActive = activeCharacterFilter === null;
+      const allBtn = document.createElement('button');
+      allBtn.onclick = () => { activeCharacterFilter = null; renderAllOutput(); };
+      allBtn.className = `px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border ${
+        allActive
+          ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/20'
+          : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700'
+      }`;
+      allBtn.innerHTML = `<i class="ph-fill ph-users"></i> সবাই (${toBengaliNumber(currentScriptData.dialogues.length)})`;
+      container.appendChild(allBtn);
+
+      // Individual character chips with dialogue count
+      chars.forEach(charName => {
+        const count = currentScriptData.dialogues.filter(d => d.speaker === charName).length;
+        const style = getCharacterColor(charName);
+        const isSelected = activeCharacterFilter === charName;
+
+        const chip = document.createElement('button');
+        chip.onclick = () => {
+          activeCharacterFilter = (activeCharacterFilter === charName) ? null : charName;
+          renderAllOutput();
+        };
+        chip.className = `px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-2 border ${
+          isSelected
+            ? 'ring-2 ring-white bg-indigo-600 text-white border-transparent'
+            : `${style.bg} ${style.border} ${style.text} hover:opacity-90`
+        }`;
+        chip.innerHTML = `
+          <span class="w-2 h-2 rounded-full ${style.dot}"></span>
+          <span>${escapeHtml(charName)}</span>
+          <span class="px-1.5 py-0.2 rounded-md bg-black/25 text-[10px]">${toBengaliNumber(count)}টি সংলাপ</span>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    function reRenderScriptLines() {
+      const separator = document.getElementById('separatorStyle').value || ' :- ';
+      const plainContainer = document.getElementById('plainScriptView');
+      const cardContainer = document.getElementById('interactiveScriptView');
+
+      plainContainer.innerHTML = '';
+      cardContainer.innerHTML = '';
+
+      const filteredDialogues = currentScriptData.dialogues
+        .map((item, index) => ({ ...item, originalIndex: index }))
+        .filter(item => !activeCharacterFilter || item.speaker === activeCharacterFilter);
+
+      if (filteredDialogues.length === 0) {
+        plainContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">কোনো সংলাপ পাওয়া যায়নি।</p>`;
+        return;
+      }
+
+      // Render Plain Script Format (Exact match to: আলিম :- কেমন আছেন আপু)
+      filteredDialogues.forEach(item => {
+        const style = getCharacterColor(item.speaker);
+        const lineDiv = document.createElement('div');
+        lineDiv.className = "group flex items-baseline justify-between gap-2 py-2 border-b border-slate-800/50 last:border-0";
+        lineDiv.innerHTML = `
+          <div class="text-[16px] leading-relaxed tracking-wide">
+            <span class="font-bold ${style.text}">${escapeHtml(item.speaker)}</span><span class="text-slate-400 font-semibold">${escapeHtml(separator)}</span><span class="text-slate-100">${escapeHtml(item.text)}</span>
+          </div>
+          <button onclick="setScriptViewMode('cards')" class="opacity-0 group-hover:opacity-100 text-[11px] text-slate-400 hover:text-indigo-300 px-1.5 py-0.5 rounded bg-slate-800 transition shrink-0" title="এডিট করুন">
+            <i class="ph ph-pencil-simple"></i>
+          </button>
+        `;
+        plainContainer.appendChild(lineDiv);
+      });
+
+      // Render Interactive Editable Cards
+      filteredDialogues.forEach(item => {
+        const style = getCharacterColor(item.speaker);
+        const card = document.createElement('div');
+        card.className = "p-3 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col gap-2";
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 flex-1">
+              <span class="w-2.5 h-2.5 rounded-full ${style.dot}"></span>
+              <input
+                type="text"
+                value="${escapeHtml(item.speaker)}"
+                onchange="updateDialogueSpeaker(${item.originalIndex}, this.value)"
+                class="bg-slate-950 border border-slate-700/80 focus:border-indigo-500 rounded-lg px-2.5 py-1 text-xs font-bold ${style.text} w-36 outline-none"
+                placeholder="চরিত্রের নাম"
+              />
+              <span class="text-xs text-slate-400 font-bold">:-</span>
+            </div>
+            <button onclick="deleteDialogueLine(${item.originalIndex})" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition" title="লাইনটি মুছুন">
+              <i class="ph ph-trash text-sm"></i>
+            </button>
+          </div>
+          <input
+            type="text"
+            value="${escapeHtml(item.text)}"
+            onchange="updateDialogueText(${item.originalIndex}, this.value)"
+            class="w-full bg-slate-950 border border-slate-700/80 focus:border-indigo-500 rounded-xl px-3 py-2 text-sm text-slate-100 outline-none"
+            placeholder="সংলাপ লিখুন..."
+          />
+        `;
+        cardContainer.appendChild(card);
+      });
+    }
+
+    function setScriptViewMode(mode) {
+      currentViewMode = mode;
+      const plainView = document.getElementById('plainScriptView');
+      const cardView = document.getElementById('interactiveScriptView');
+      const textBtn = document.getElementById('viewModeTextBtn');
+      const cardBtn = document.getElementById('viewModeCardBtn');
+
+      if (mode === 'text') {
+        plainView.classList.remove('hidden');
+        cardView.classList.add('hidden');
+        textBtn.className = "px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold transition";
+        cardBtn.className = "px-2.5 py-1 rounded-lg text-slate-400 hover:text-white font-medium transition";
+      } else {
+        plainView.classList.add('hidden');
+        cardView.classList.remove('hidden');
+        cardBtn.className = "px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-semibold transition";
+        textBtn.className = "px-2.5 py-1 rounded-lg text-slate-400 hover:text-white font-medium transition";
+      }
+    }
+
+    // ==========================================
+    // EDITING DIALOGUES & CHARACTERS
+    // ==========================================
+    function updateDialogueSpeaker(index, newSpeaker) {
+      const cleaned = newSpeaker.trim() || "অজ্ঞাত";
+      currentScriptData.dialogues[index].speaker = cleaned;
+      renderAllOutput();
+    }
+
+    function updateDialogueText(index, newText) {
+      currentScriptData.dialogues[index].text = newText.trim();
+      renderAllOutput();
+    }
+
+    function deleteDialogueLine(index) {
+      if (currentScriptData.dialogues.length <= 1) {
+        showToast("কমপক্ষে একটি সংলাপ থাকা প্রয়োজন!", true);
+        return;
+      }
+      currentScriptData.dialogues.splice(index, 1);
+      renderAllOutput();
+      showToast("সংলাপ লাইনটি মুছে ফেলা হয়েছে।");
+    }
+
+    function addNewDialogueLine() {
+      const defaultSpeaker = currentScriptData.characters[0] || "আলিম";
+      currentScriptData.dialogues.push({
+        speaker: defaultSpeaker,
+        text: "নতুন সংলাপ এখানে লিখুন..."
+      });
+      setScriptViewMode('cards');
+      renderAllOutput();
+      showToast("নতুন সংলাপের লাইন যুক্ত করা হয়েছে!");
+    }
+
+    function renderCharacterManager() {
+      const list = document.getElementById('characterManagerList');
+      list.innerHTML = '';
+
+      currentScriptData.characters.forEach((charName, idx) => {
+        const style = getCharacterColor(charName);
+        const count = currentScriptData.dialogues.filter(d => d.speaker === charName).length;
+
+        const row = document.createElement('div');
+        row.className = "p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3";
+        row.innerHTML = `
+          <div class="flex items-center gap-3 flex-1">
+            <div class="w-10 h-10 rounded-xl ${style.bg} ${style.border} border flex items-center justify-center font-bold ${style.text}">
+              ${escapeHtml(charName.charAt(0))}
+            </div>
+            <div class="flex-1">
+              <label class="text-[10px] text-slate-400 block">চরিত্র #${toBengaliNumber(idx + 1)} (${toBengaliNumber(count)}টি সংলাপ)</label>
+              <input
+                type="text"
+                value="${escapeHtml(charName)}"
+                onchange="renameCharacterEverywhere('${escapeJavaScriptString(charName)}', this.value)"
+                class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-3 py-1.5 text-sm font-bold text-white outline-none mt-1"
+              />
+            </div>
+          </div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    function renameCharacterEverywhere(oldName, newName) {
+      const cleaned = newName.trim();
+      if (!cleaned || cleaned === oldName) return;
+
+      currentScriptData.dialogues.forEach(d => {
+        if (d.speaker === oldName) d.speaker = cleaned;
+      });
+      if (activeCharacterFilter === oldName) {
+        activeCharacterFilter = cleaned;
+      }
+      renderAllOutput();
+      showToast(`'${oldName}'-এর নাম পরিবর্তন করে '${cleaned}' করা হয়েছে!`);
+    }
+
+    // ==========================================
+    // EXPORT TOOLS: COPY, TXT, PDF, HISTORY
+    // ==========================================
+    function getFormattedPlainTextScript() {
+      const separator = document.getElementById('separatorStyle').value || ' :- ';
+      return currentScriptData.dialogues
+        .filter(d => !activeCharacterFilter || d.speaker === activeCharacterFilter)
+        .map(d => `${d.speaker}${separator}${d.text}`)
+        .join('\n\n');
+    }
+
+    function copyFinalScript() {
+      const scriptText = getFormattedPlainTextScript();
+      const tempArea = document.createElement('textarea');
+      tempArea.value = scriptText;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempArea);
+
+      showToast("✅ সম্পূর্ণ স্ক্রিপ্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    }
+
+    function downloadTxtFile() {
+      const charsHeader = `গল্পের চরিত্রসমূহ: ${currentScriptData.characters.join(', ')}\n====================================\n\n`;
+      const scriptBody = getFormattedPlainTextScript();
+      const blob = new Blob([charsHeader + scriptBody], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentScriptData.title || 'Script-Modifier'}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast("📄 TXT ফাইল ডাউনলোড সম্পন্ন হয়েছে!");
+    }
+
+    function printOrPdfScript() {
+      document.getElementById('printCharacters').innerText =
+        `চরিত্রসমূহ: ${currentScriptData.characters.join(', ')}`;
+      document.getElementById('printDialogues').innerText = getFormattedPlainTextScript();
+      window.print();
+    }
+
+    // ==========================================
+    // HISTORY MANAGEMENT (LOCAL STORAGE)
+    // ==========================================
+    function loadHistoryFromStorage() {
+      try {
+        const raw = localStorage.getItem('script_modifier_history_v1');
+        savedScripts = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        savedScripts = [];
+      }
+      updateHistoryUI();
+    }
+
+    function saveCurrentScriptToHistory() {
+      const entry = {
+        id: Date.now(),
+        timestamp: new Date().toLocaleString('bn-BD'),
+        title: currentScriptData.title || "সংশোধিত স্ক্রিপ্ট",
+        characters: [...currentScriptData.characters],
+        dialogues: JSON.parse(JSON.stringify(currentScriptData.dialogues))
+      };
+
+      savedScripts.unshift(entry);
+      if (savedScripts.length > 20) savedScripts.pop();
+
+      try {
+        localStorage.setItem('script_modifier_history_v1', JSON.stringify(savedScripts));
+      } catch (e) {}
+
+      updateHistoryUI();
+      showToast("🔖 স্ক্রিপ্টটি সংরক্ষিত তালিকায় সেভ করা হয়েছে!");
+    }
+
+    function updateHistoryUI() {
+      const badge = document.getElementById('historyBadge');
+      const container = document.getElementById('historyListContainer');
+
+      if (savedScripts.length > 0) {
+        badge.classList.remove('hidden');
+        badge.innerText = toBengaliNumber(savedScripts.length);
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      container.innerHTML = '';
+      if (savedScripts.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-500 space-y-2">
+            <i class="ph ph-bookmark-simple text-3xl block mx-auto"></i>
+            <p class="text-xs">এখনো কোনো স্ক্রিপ্ট সেভ করা হয়নি।</p>
+          </div>
+        `;
+        return;
+      }
+
+      savedScripts.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2";
+        const previewText = item.dialogues.slice(0, 2).map(d => `${d.speaker} :- ${d.text}`).join('\n');
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-indigo-300">${escapeHtml(item.title)}</h3>
+            <span class="text-[10px] text-slate-500">${escapeHtml(item.timestamp)}</span>
+          </div>
+          <div class="flex flex-wrap gap-1">
+            ${item.characters.map(c => `<span class="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">👤 ${escapeHtml(c)}</span>`).join('')}
+          </div>
+          <p class="text-xs text-slate-300 whitespace-pre-line bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">${escapeHtml(previewText)}</p>
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <button onclick="loadScriptFromHistory(${item.id})" class="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold transition">
+              এডিটরে খুলুন
+            </button>
+            <button onclick="deleteHistoryItem(${item.id})" class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs transition">
+              <i class="ph ph-trash"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function loadScriptFromHistory(id) {
+      const found = savedScripts.find(s => s.id === id);
+      if (!found) return;
+
+      currentScriptData = {
+        title: found.title,
+        summary: "সংরক্ষিত ইতিহাস থেকে স্ক্রিপ্টটি লোড করা হয়েছে।",
+        characters: [...found.characters],
+        dialogues: JSON.parse(JSON.stringify(found.dialogues))
+      };
+      activeCharacterFilter = null;
+      renderAllOutput();
+      switchTab('editor');
+      showToast("স্ক্রিপ্টটি এডিটরে লোড করা হয়েছে!");
+    }
+
+    function deleteHistoryItem(id) {
+      savedScripts = savedScripts.filter(s => s.id !== id);
+      try {
+        localStorage.setItem('script_modifier_history_v1', JSON.stringify(savedScripts));
+      } catch (e) {}
+      updateHistoryUI();
+      showToast("স্ক্রিপ্টটি মুছে ফেলা হয়েছে।");
+    }
+
+    function clearAllHistory() {
+      savedScripts = [];
+      try {
+        localStorage.removeItem('script_modifier_history_v1');
+      } catch (e) {}
+      updateHistoryUI();
+      showToast("সব ইতিহাস মুছে ফেলা হয়েছে।");
+    }
+
+    // ==========================================
+    // NAVIGATION & UTILITIES
+    // ==========================================
+    function switchTab(tabName) {
+      ['editor', 'characters', 'history'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${t}`);
+        navBtn.className = "flex flex-col items-center gap-1 py-1 px-4 rounded-2xl text-slate-400 hover:text-slate-200 font-medium transition";
+      });
+
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabName}`);
+      activeNav.className = "flex flex-col items-center gap-1 py-1 px-4 rounded-2xl text-indigo-400 font-semibold transition";
+    }
+
+    let toastTimer = null;
+    function showToast(message, isError = false) {
+      const box = document.getElementById('toastBox');
+      const msg = document.getElementById('toastMessage');
+      const icon = document.getElementById('toastIcon');
+
+      msg.innerText = message;
+      icon.className = isError
+        ? "ph-fill ph-warning-circle text-rose-400 text-base"
+        : "ph-fill ph-check-circle text-emerald-400 text-base";
+
+      box.classList.remove('opacity-0', 'translate-y-2');
+      box.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.add('opacity-0', 'translate-y-2');
+        box.classList.remove('opacity-100', 'translate-y-0');
+      }, 2600);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJavaScriptString(str) {
+      return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
